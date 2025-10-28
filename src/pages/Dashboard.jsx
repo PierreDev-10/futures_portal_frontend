@@ -18,31 +18,41 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [selectedSignal, setSelectedSignal] = useState(null);
 
-  // Fetch signals
+  // Fetch signals from backend
   const fetchSignals = async () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/api/signals/latest`);
       const data = response.data;
-      if (Array.isArray(data)) setSignals(data);
-      else if (data.results) setSignals(data.results);
-      else setSignals([]);
+
+      // Normalize for both single object and array responses
+      if (Array.isArray(data)) {
+        setSignals(data);
+      } else if (data && typeof data === "object") {
+        setSignals([data]); // Wrap single signal in array
+      } else if (data.results) {
+        setSignals(data.results);
+      } else {
+        setSignals([]);
+      }
     } catch (error) {
       console.error("Error fetching signals:", error);
+      setSignals([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch immediately + auto-refresh every minute
   useEffect(() => {
+    fetchSignals();
     const interval = setInterval(() => {
       fetchSignals();
     }, 60000); // every 60 seconds
-
-  return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, []);
 
-  // Format date from UTC
+  // Format UTC datetime
   const formatDate = (timestamp) => {
     if (!timestamp) return "N/A";
     const date = new Date(timestamp);
@@ -54,11 +64,12 @@ function Dashboard() {
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
+          second: "2-digit",
           hour12: true,
         });
   };
 
-  // Table columns
+  // DataGrid columns
   const columns = [
     { field: "symbol", headerName: "Symbol", width: 120 },
     { field: "direction", headerName: "Direction", width: 100 },
@@ -66,40 +77,39 @@ function Dashboard() {
       field: "entry",
       headerName: "Entry Price",
       width: 130,
-      valueFormatter: (params) => params.value?.toFixed(2),
+      valueFormatter: (params) =>
+        params.value ? Number(params.value).toFixed(2) : "-",
     },
     {
       field: "tp1",
       headerName: "TP1",
       width: 100,
-      valueFormatter: (params) => params.value?.toFixed(2),
+      valueFormatter: (params) =>
+        params.value ? Number(params.value).toFixed(2) : "-",
     },
     {
       field: "tp2",
       headerName: "TP2",
       width: 100,
-      valueFormatter: (params) => params.value?.toFixed(2),
+      valueFormatter: (params) =>
+        params.value ? Number(params.value).toFixed(2) : "-",
     },
     {
       field: "sl",
       headerName: "Stop Loss",
       width: 120,
-      valueFormatter: (params) => params.value?.toFixed(2),
+      valueFormatter: (params) =>
+        params.value ? Number(params.value).toFixed(2) : "-",
     },
     {
       field: "prediction_time",
       headerName: "Prediction Time",
-      width: 200,
+      width: 220,
       valueFormatter: (params) => formatDate(params.value),
     },
-    {
-      field: "status",
-      headerName: "Status",
-      width: 120,
-    },
+    { field: "status", headerName: "Status", width: 120 },
   ];
 
-  // Modal style
   const modalStyle = {
     position: "absolute",
     top: "50%",
@@ -163,7 +173,7 @@ function Dashboard() {
           Latest Signals
         </Typography>
         <DataGrid
-          rows={signals.map((signal, index) => ({ id: index + 1, ...signal }))}
+          rows={signals.map((signal, index) => ({ id: signal.id || index + 1, ...signal }))}
           columns={columns}
           pageSize={5}
           rowsPerPageOptions={[5, 10]}
@@ -172,7 +182,7 @@ function Dashboard() {
         />
       </Paper>
 
-      {/* Expanded Modal */}
+      {/* Modal for detailed signal info */}
       <Modal
         open={!!selectedSignal}
         onClose={() => setSelectedSignal(null)}
