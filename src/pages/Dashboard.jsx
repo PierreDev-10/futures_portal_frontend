@@ -35,7 +35,11 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchSignals();
+    const interval = setInterval(() => {
+      fetchSignals();
+    }, 60000); // every 60 seconds
+
+  return () => clearInterval(interval);
   }, []);
 
   // Format date from UTC
