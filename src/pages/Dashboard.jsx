@@ -24,6 +24,7 @@ function Dashboard() {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/signals/latest`);
       const data = response.data;
+      console.debug("Latest payload:", data);
 
       // Normalize for both single object and array responses
       if (Array.isArray(data)) {
@@ -48,7 +49,7 @@ function Dashboard() {
     fetchSignals();
     const interval = setInterval(() => {
       fetchSignals();
-    }, 60000); // every 60 seconds
+    }, 20000); // every 20 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -68,47 +69,55 @@ function Dashboard() {
           hour12: true,
         });
   };
+ // Safe numeric formatter
+const fmt = (v) => {
+  if (v === null || v === undefined || v === "") return "-";
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(2) : "-";
+};
 
-  // DataGrid columns
-  const columns = [
-    { field: "symbol", headerName: "Symbol", width: 120 },
-    { field: "direction", headerName: "Direction", width: 100 },
-    {
-      field: "entry",
-      headerName: "Entry Price",
-      width: 130,
-      valueFormatter: (params) =>
-        params.value ? Number(params.value).toFixed(2) : "-",
-    },
-    {
-      field: "tp1",
-      headerName: "TP1",
-      width: 100,
-      valueFormatter: (params) =>
-        params.value ? Number(params.value).toFixed(2) : "-",
-    },
-    {
-      field: "tp2",
-      headerName: "TP2",
-      width: 100,
-      valueFormatter: (params) =>
-        params.value ? Number(params.value).toFixed(2) : "-",
-    },
-    {
-      field: "sl",
-      headerName: "Stop Loss",
-      width: 120,
-      valueFormatter: (params) =>
-        params.value ? Number(params.value).toFixed(2) : "-",
-    },
-    {
-      field: "prediction_time",
-      headerName: "Prediction Time",
-      width: 220,
-      valueFormatter: (params) => formatDate(params.value),
-    },
-    { field: "status", headerName: "Status", width: 120 },
-  ];
+  // DataGrid columns (drop-in replacement)
+const columns = [
+  { field: "symbol", headerName: "Symbol", width: 120 },
+  { field: "direction", headerName: "Direction", width: 110 },
+  {
+    field: "entry",
+    headerName: "Entry Price",
+    width: 130,
+    valueGetter: (params) => params.row.entry,          // read raw
+    renderCell: (params) => fmt(params.value),          // display robustly
+  },
+  {
+    field: "tp1",
+    headerName: "TP1",
+    width: 100,
+    valueGetter: (p) => p.row.tp1,
+    renderCell: (p) => fmt(p.value),
+  },
+  {
+    field: "tp2",
+    headerName: "TP2",
+    width: 100,
+    valueGetter: (p) => p.row.tp2,
+    renderCell: (p) => fmt(p.value),
+  },
+  {
+    field: "sl",
+    headerName: "Stop Loss",
+    width: 120,
+    valueGetter: (p) => p.row.sl,
+    renderCell: (p) => fmt(p.value),
+  },
+  {
+    field: "prediction_time",
+    headerName: "Prediction Time",
+    width: 220,
+    valueGetter: (p) => p.row.prediction_time || p.row.created_at, // fallback
+    renderCell: (p) =>
+      p.value ? formatDate(p.value) : "N/A",
+  },
+  { field: "status", headerName: "Status", width: 120 },
+];
 
   const modalStyle = {
     position: "absolute",
