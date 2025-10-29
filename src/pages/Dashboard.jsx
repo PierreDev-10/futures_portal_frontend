@@ -11,7 +11,7 @@ import {
 import { DataGrid } from "@mui/x-data-grid";
 import axios from "axios";
 import { API_BASE_URL } from "../api/config";
-import SignalChart from "../components/SignalChart";
+//import SignalChart from "../components/SignalChart";
 
 function Dashboard() {
   const [signals, setSignals] = useState([]);
@@ -47,9 +47,7 @@ function Dashboard() {
   // Fetch immediately + auto-refresh every minute
   useEffect(() => {
     fetchSignals();
-    const interval = setInterval(() => {
-      fetchSignals();
-    }, 20000); // every 20 seconds
+    const interval = setInterval(fetchSignals, 20000); // every 20 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -84,35 +82,35 @@ const columns = [
     field: "entry",
     headerName: "Entry Price",
     width: 130,
-    valueGetter: (params) => params.row.entry,          // read raw
+    valueGetter: (params) => params?.row?.entry ?? "-",          // read raw
     renderCell: (params) => fmt(params.value),          // display robustly
   },
   {
     field: "tp1",
     headerName: "TP1",
     width: 100,
-    valueGetter: (p) => p.row.tp1,
+    valueGetter: (p) => p?.row?.tp1 ?? "-",
     renderCell: (p) => fmt(p.value),
   },
   {
     field: "tp2",
     headerName: "TP2",
     width: 100,
-    valueGetter: (p) => p.row.tp2,
+    valueGetter: (p) => p?.row?.tp2 ?? "-",
     renderCell: (p) => fmt(p.value),
   },
   {
     field: "sl",
     headerName: "Stop Loss",
     width: 120,
-    valueGetter: (p) => p.row.sl,
+    valueGetter: (p) => p?.row?.sl ?? "-",
     renderCell: (p) => fmt(p.value),
   },
   {
     field: "prediction_time",
     headerName: "Prediction Time",
     width: 220,
-    valueGetter: (p) => p.row.prediction_time || p.row.created_at, // fallback
+    valueGetter: (p) => p?.row?.prediction_time || p?.row?.created_at, // fallback
     renderCell: (p) =>
       p.value ? formatDate(p.value) : "N/A",
   },
