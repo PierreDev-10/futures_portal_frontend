@@ -227,7 +227,7 @@ const columns = [
       </Modal>
 
       {/* Chart Section */}
-      <SignalChart data={signals} />
+      {/*<SignalChart data={signals} />*/}
     </Container>
   );
 }
